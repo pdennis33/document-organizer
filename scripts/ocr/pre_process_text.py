@@ -6,11 +6,22 @@ df = pd.read_csv('../../data_prep/file_labels.csv')
 
 
 # Function to clean text
-def clean_text(text):
+def clean_text(text, remove_digits=False):
     # Convert to lowercase
     text = text.lower()
-    # Remove special characters and digits
-    text = re.sub(r'[^a-zA-Z\s]', '', text, re.I | re.A)
+    # Replace - with a space
+    text = text.replace('-', ' ')
+    # Remove new lines
+    # text = text.replace('\n', ' ')
+    # Remove special characters and (conditionally) digits
+    if remove_digits:
+        text = re.sub(r'[^a-zA-Z\s]', '', text, re.I | re.A)
+    else:
+        text = re.sub(r'[^a-zA-Z0-9\s]', '', text, re.I | re.A)
+    # Remove multiple spaces
+    text = re.sub(r'[ \t\n\r\f\v]+', ' ', text)
+    # Strip leading and trailing whitespace
+    text = text.strip()
     return text
 
 

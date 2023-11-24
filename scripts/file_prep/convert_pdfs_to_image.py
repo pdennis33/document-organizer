@@ -20,9 +20,6 @@ def convert_pdfs_to_images(pdf_directory, output_directory):
 
 
 # Specify the directories
-# pdf_dir = '../pdfs/working'
-# output_dir = '../images/working'
-
 pdf_dir = '../../data/pdfs/processed'
 output_dir = '../../data/images/inbox'
 convert_pdfs_to_images(pdf_dir, output_dir)

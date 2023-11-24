@@ -40,7 +40,5 @@ def extract_text_from_images_and_save(image_directory, text_directory):
 
 # Specify the directory
 image_dir = '../../data/images/inbox'
-# image_dir = '../images/inbox'
-text_dir = "../../data/text"
+text_dir = "../../data/text/raw"
 extract_text_from_images_and_save(image_dir, text_dir)
-# extract_text_from_image(image_dir, text_dir, '001_1.jpg')

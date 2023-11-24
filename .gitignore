@@ -6,6 +6,7 @@
 .idea/
 
 # Local Data Testing
+config
 data
 data_prep
 
