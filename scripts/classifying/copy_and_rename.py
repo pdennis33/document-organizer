@@ -1,52 +1,47 @@
-import json
-import os
+from classify_exact_match import classify_documents, load_rules
 import shutil
 from datetime import datetime
-from fuzzywuzzy import process
+import os
+
+# Paths for classification
+text_directory = '../../data/text/cleaned/'
+rules_path = '../../config/rules.json'
+
+# Classify documents
+rules = load_rules(rules_path)
+classified_documents = classify_documents(text_directory, rules)
 
 
-def load_rules(path_to_json):
-    with open(path_to_json, 'r') as file:
-        return json.load(file)
+def copy_and_rename_files(classified_docs, source_img_directory, target_base_directory):
+    vendor_file_count = {}
 
+    for text_file, (category, vendor_name) in classified_docs.items():
+        if category != "unknown" and vendor_name is not None:
+            date_stamp = datetime.now().strftime('%Y%m%d')
+            vendor_key = f"{vendor_name}_{date_stamp}"
 
-def find_vendor(text, vendors):
-    # Using fuzzy matching to find the closest vendor name
-    match, score = process.extractOne(text, vendors)
-    if score > 80:  # You can adjust the score threshold
-        return match.replace(" ", "_")  # Replace spaces with underscores
-    return None
+            # Initialize or increment the file counter for this vendor
+            if vendor_key not in vendor_file_count:
+                vendor_file_count[vendor_key] = 1
+            else:
+                vendor_file_count[vendor_key] += 1
 
+            sequence = f"_{vendor_file_count[vendor_key]:02d}"
+            new_filename = f"{vendor_name}{sequence}_{date_stamp}.jpg"
 
-def move_and_rename_files(classified_docs, source_directory, target_base_directory, vendors):
-    for filename, category in classified_docs.items():
-        file_path = os.path.join(source_directory, filename)
-        with open(file_path, 'r') as file:
-            text = file.read()
+            source_path = os.path.join(source_img_directory, text_file.replace('.txt', '.jpg'))
+            target_path = os.path.join(target_base_directory, category, vendor_name, new_filename)
 
-        vendor_name = find_vendor(text, vendors)
-        if vendor_name:
-            new_filename = f"{vendor_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            shutil.copy(source_path, target_path)  # Copy the file
+            print(f"Copied and renamed file {text_file} to {target_path}")
         else:
-            new_filename = f"document_{category}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-
-        # Define source and target paths for the image file
-        image_file = filename.replace('.txt', '.jpg')  # Assuming image has same name as text file
-        source_image_path = os.path.join('path/to/original/images', image_file)
-        target_image_path = os.path.join(target_base_directory, category, new_filename)
-
-        # Create target directory if it doesn't exist
-        os.makedirs(os.path.dirname(target_image_path), exist_ok=True)
-
-        # Move and rename the image file
-        shutil.move(source_image_path, target_image_path)
-        print(f"Moved and renamed file {image_file} to {target_image_path}")
+            print(f"Skipped unknown category file: {text_file}")
 
 
-# Example usage
-rules = load_rules('path/to/rules.json')
-# classified_documents = {'doc1.txt': 'veterinary', 'doc2.txt': 'dental', ...}  # Use your actual classification results
-source_directory = 'path/to/cleaned/text/directory'
-target_base_directory = 'path/to/sorted/documents'
+# Paths to your directories
+source_img_directory = '../../data/images/inbox/'
+target_base_directory = '../../data/images/classified/'
 
-# move_and_rename_files(classified_documents, source_directory, target_base_directory, rules['vendors'])
+# Run the copy and rename operation
+copy_and_rename_files(classified_documents, source_img_directory, target_base_directory)
