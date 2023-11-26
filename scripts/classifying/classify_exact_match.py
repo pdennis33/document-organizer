@@ -9,51 +9,51 @@ def load_rules(path_to_json):
         return json.load(file)
 
 
-def classify_document_from_vendor_name(text, rules):
-    # Extract all vendor names for fuzzy matching
-    vendor_scores = {}
-    all_vendors = list(rules['vendors'].keys())
+def customized_fuzzy_matching(query, document_text):
+    # Break the document text into chunks
+    words = document_text.split()
+    query_length = len(query.split())
+    chunks = [' '.join(words[i:i + query_length]) for i in range(len(words) - query_length + 1)]
 
-    # Perform token_set_ratio on all vendors and store the scores
-    for vendor in all_vendors:
-        vendor_scores[vendor] = process.fuzz.token_set_ratio(text, vendor)
+    # Perform fuzzy matching with each chunk
+    best_score = 0
+    for chunk in chunks:
+        score = process.fuzz.ratio(query, chunk)
+        # If we get the maximum score, exit early
+        if score == 100:
+            return score
+        best_score = max(best_score, score)
+
+    return best_score
+
+
+def classify_document(text, rules):
+    # Attempt regex matching first
+    for vendor, category in rules['vendors'].items():
+        if re.search(rf"\b{re.escape(vendor)}\b", text, re.IGNORECASE):
+            return category, vendor.replace(" ", "_")
+
+    # Dictionary to hold scores for each vendor
+    vendor_scores = {}
+
+    # Use customized fuzzy matching and store scores
+    for vendor in rules['vendors'].keys():
+        vendor_scores[vendor] = customized_fuzzy_matching(vendor, text)
 
     # Find the highest score
     max_score = max(vendor_scores.values())
 
-    # Filter vendors with the highest score
+    # Find all vendors that have the highest score
     top_vendors = [vendor for vendor, score in vendor_scores.items() if score == max_score]
 
-    # If there are multiple vendors with the same highest score, use regex to break the tie
+    # Handle ties or clear winner
     if len(top_vendors) > 1:
-        vendor_regex = re.compile('|'.join(map(re.escape, top_vendors)), re.IGNORECASE)
-        regex_match = vendor_regex.search(text)
-        if regex_match:
-            best_match = regex_match.group(0)
-            matched_category = rules['vendors'][best_match]
-            return matched_category, best_match.replace(" ", "_")
-
-    # If there's only one top vendor, no need for regex
-    elif len(top_vendors) == 1:
-        best_match = top_vendors[0]
-        matched_category = rules['vendors'][best_match]
-        return matched_category, best_match.replace(" ", "_")
+        return "tie", top_vendors
+    elif len(top_vendors) == 1 and max_score > 80:  # Threshold
+        matched_category = rules['vendors'][top_vendors[0]]
+        return matched_category, top_vendors[0].replace(" ", "_")
 
     return "unknown", None
-
-
-
-# def classify_document_from_vendor_name(text, rules):
-#     for category, definition in rules['categories'].items():
-#         # Using fuzzy matching to find the closest vendor name
-#         # It's important to note the usage of the token_set_ratio scorer. This scorer is much more
-#         # effective when searching for a substring within a string. For example, we are searching
-#         # for a vendor name within a document text. TLDR: it groups words together into tokens in both
-#         # the search string and the target string, and then compares the tokens to each other.
-#         match, score = process.extractOne(text, definition['vendors'], scorer=process.fuzz.token_set_ratio)
-#         if score > 80:
-#             return category, match.replace(" ", "_")
-#     return "unknown", None
 
 
 def is_search_term_match(text, search_terms):
@@ -78,13 +78,13 @@ def classify_documents(text_directory, rules):
 
                 # Start with trying an exact match based on vendor name
                 # If an exact match is not found, try fuzzy matching
-                category, vendor_name = classify_document_from_vendor_name(text, rules)
+                category, vendor_name = classify_document(text, rules)
 
-                if category == "unknown":
-                    if previous_classification is not None and is_search_term_match(text,
-                                                                                    rules['categories'][
-                                                                                        previous_classification[0]][
-                                                                                        'search_terms']):
+                if category == "tie":
+                    print(f"Could not classify document due to a tie between vendors: {vendor_name}")
+                elif category == "unknown":
+                    if previous_classification is not None and is_search_term_match(text, rules['categories'][
+                        previous_classification[0]]['search_terms']):
                         category, vendor_name = previous_classification
                 else:
                     previous_classification = (category, vendor_name)
