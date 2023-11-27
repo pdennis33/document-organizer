@@ -1,15 +1,7 @@
-from classify_exact_match import classify_documents, load_rules
+from .classify_exact_match import classify_documents, load_rules
 import shutil
 from datetime import datetime
 import os
-
-# Paths for classification
-text_directory = '../../data/text/cleaned/'
-rules_path = '../../config/rules.json'
-
-# Classify documents
-rules = load_rules(rules_path)
-classified_documents = classify_documents(text_directory, rules)
 
 
 def copy_and_rename_files(classified_docs, source_img_directory, target_base_directory):
@@ -39,9 +31,27 @@ def copy_and_rename_files(classified_docs, source_img_directory, target_base_dir
             print(f"Skipped unknown category file: {text_file}")
 
 
-# Paths to your directories
-source_img_directory = '../../data/images/inbox/'
-target_base_directory = '../../data/images/classified/'
+def classify_and_rename(cleaned_text_dir, raw_images_dir, final_output_dir, rules_path):
+    # Classify documents
+    rules = load_rules(rules_path)
+    classified_documents = classify_documents(cleaned_text_dir, rules)
 
-# Run the copy and rename operation
-copy_and_rename_files(classified_documents, source_img_directory, target_base_directory)
+    # Run the copy and rename operation
+    copy_and_rename_files(classified_documents, raw_images_dir, final_output_dir)
+
+
+if __name__ == "__main__":
+    # Paths for classification
+    text_directory = '../../data/text/cleaned/'
+    rules_path = '../../config/rules.json'
+
+    # Classify documents
+    rules = load_rules(rules_path)
+    classified_documents = classify_documents(text_directory, rules)
+
+    # Paths to your directories
+    source_img_directory = '../../data/images/inbox/'
+    target_base_directory = '../../data/images/classified/'
+
+    # Run the copy and rename operation
+    copy_and_rename_files(classified_documents, source_img_directory, target_base_directory)

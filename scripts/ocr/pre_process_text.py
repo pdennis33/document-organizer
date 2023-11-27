@@ -1,12 +1,8 @@
-import pandas as pd
 import re
-
-# Read the labeled data
-df = pd.read_csv('../../data_prep/file_labels.csv')
+import os
 
 
-# Function to clean text
-def clean_text(text, remove_digits=False):
+def clean_text(text, remove_digits):
     # Convert to lowercase
     text = text.lower()
     # Replace - with a space
@@ -25,13 +21,12 @@ def clean_text(text, remove_digits=False):
     return text
 
 
-# Loop through the DataFrame and clean text
-for index, row in df.iterrows():
-    file_path = f"../../data/text/raw/{row['text_file_name']}"
-    with open(file_path, 'r') as file:
-        fileText = file.read()
-        cleaned_text = clean_text(fileText)
-        # Save the cleaned text to a file
-        with open(file_path.replace('raw', 'cleaned'), 'w') as file:
-            file.write(cleaned_text)
-        # You can now use 'cleaned_text' for further processing
+def clean_documents(raw_text_dir, cleaned_text_dir, remove_digits=False):
+    for filename in os.listdir(raw_text_dir):
+        if filename.endswith('.txt'):
+            with open(os.path.join(raw_text_dir, filename), 'r') as raw_file:
+                file_text = raw_file.read()
+                cleaned_text = clean_text(file_text, remove_digits)
+                # Save the cleaned text to a file
+                with open(os.path.join(cleaned_text_dir, filename), 'w') as file:
+                    file.write(cleaned_text)

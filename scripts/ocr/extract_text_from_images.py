@@ -2,9 +2,6 @@ import os
 import pytesseract
 
 
-# from PIL import Image
-
-
 def extract_text_from_images_and_save(image_directory, text_directory):
     for filename in os.listdir(image_directory):
         if filename.endswith('.jpg') or filename.endswith('.png'):
@@ -38,7 +35,8 @@ def extract_text_from_images_and_save(image_directory, text_directory):
                 print(f"General error processing {filename}: {e}")
 
 
-# Specify the directory
-image_dir = '../../data/images/inbox'
-text_dir = "../../data/text/raw"
-extract_text_from_images_and_save(image_dir, text_dir)
+if __name__ == "__main__":
+    # Specify the directory
+    image_dir = '../../data/images/inbox'
+    text_dir = "../../data/text/raw"
+    extract_text_from_images_and_save(image_dir, text_dir)
